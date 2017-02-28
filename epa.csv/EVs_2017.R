@@ -9,4 +9,14 @@ EV <- EV[,-1]
 
 EV <- EV %>% select(`Mfr Name`, `Range1 - Model Type Driving Range - Conventional Fuel`, Carline, `Drive Desc`, `Carline Class Desc`, `Batt Specific Energy (Watt-hr/kg)`) 
 EV <- EV %>% na.omit() 
+newNames <- c("Make", "Range", "Model", "Drive", "Class", "Watt-Hr/Kg")
+colnames(EV) <- newNames
+
+EV <- EV %>% mutate_at(vars(Range, `Watt-Hr/Kg`), funs(as.numeric))
+EV %>% separate(col = Drive, into = "Drive", sep = "-1")
+
+EV$Drive[grepl("Front",EV$Drive)] <- "Front"
+EV$Drive[grepl("Rear", EV$Drive)] <- "Rear"
+EV$Drive[grepl("All", EV$Drive)] <- "AWD"
+EV <- EV %>% mutate_at(vars(Drive), funs(as.factor))
 
