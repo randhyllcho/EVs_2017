@@ -19,4 +19,5 @@ EV$Drive[grepl("Front",EV$Drive)] <- "Front"
 EV$Drive[grepl("Rear", EV$Drive)] <- "Rear"
 EV$Drive[grepl("All", EV$Drive)] <- "AWD"
 EV <- EV %>% mutate_at(vars(Drive), funs(as.factor))
+models <- EV %>% distinct(Model)
 
