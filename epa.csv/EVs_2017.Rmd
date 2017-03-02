@@ -1,0 +1,91 @@
+---
+title: "Cleaned set of EVs sold in the USA"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    highlight: textmate
+---
+****
+
+This was hands down the messiest set of data that I have attempted to manage. The original dataset contained 74 observations across 191  variables, only about half housed any data. The EPA seems to use the same Excel template for the various types of vehicles it tracks, hence a large amount of unused fuel economy and dinosaur drinking engine specs. The formatting of the CSV was also very strange, the names of all of the variables were found on row seven of the dataset, and at the end of each manufacturer's section, they added the name of the vehicle to its own row at a fixed column interval. 
+
+****
+```{r}
+library(tidyverse)
+library(ggrepel)
+```
+## Load in the data
+****
+*AKA:* **Racks on racks of NAs**  
+
+```{r}
+EV <- read.csv("EVs.csv", header = TRUE, stringsAsFactors = FALSE, na.strings = c("", "NA"))
+str(EV)
+```
+## Clean the data
+****  
+*AKA:* **Dplyr and Base collide**  
+
+```{r}
+colnames(EV) <- EV[7,]
+EV <- EV[-1:-7,]
+EV <- EV[,-1]
+EV <- EV %>% select(`Mfr Name`, `Range1 - Model Type Driving Range - Conventional Fuel`, Carline, `Drive Desc`, `Carline Class Desc`, `Batt Specific Energy (Watt-hr/kg)`) 
+EV <- EV %>% na.omit() 
+newNames <- c("Make", "Range", "Model", "Drive", "Class", "Watt-Hr/Kg")
+colnames(EV) <- newNames
+```
+Take a peek at what the data looks like. 
+```{r}
+str(EV)
+```
+Headed in the right direction. Time to convert some classes and rename some observations.
+```{r}
+EV <- EV %>% mutate_at(vars(Range, `Watt-Hr/Kg`), funs(as.numeric))
+
+EV$Drive[grepl("Front",EV$Drive)] <- "Front"
+EV$Drive[grepl("Rear", EV$Drive)] <- "Rear"
+EV$Drive[grepl("All", EV$Drive)] <- "AWD"
+
+EV <- EV %>% mutate_at(vars(Drive), funs(as.factor))
+EV <- EV %>% distinct(Model, .keep_all = TRUE)
+```
+
+
+The data should be in decent shape to do something with now...
+```{r}
+str(EV)
+```
+...looks good enough to plot. 
+
+
+****  
+## Exploratory plot  
+A plot looking at the different ranges achieved by each car by brand. 
+
+```{r}
+ggplot(EV, aes(Make, Range)) +
+  geom_label_repel(aes(label = paste(Model, Range, sep = ": ")), color = "dodgerblue", size = 2) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+****
+## Summary  
+
+All in all, this was a fun dataset to practice cleaning messy data. There were some challenging methods that I hadn't used before (i.e. mutate_at and .keep_all), and as a bonus, StackOverflow was down for maintenance which was both a blessing and a curse. On top of gaining some new cleaning skills, this is my first time using RMarkdown which I really liked messing with. I didn't get too deep into ggplot other than a basic plot because I really wanted to focus on getting a useable data frame that could be explored later.  
+
+****  
+*Check out more non-sense:*    
+
+**Twitter:** [Randhyllcho](https://twitter.com/Randhyllcho)  
+
+**GitHub:** [Ryan Christensen](https://github.com/randhyllcho)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
